@@ -1,0 +1,9 @@
+{
+  "name": "surf_api",
+  "version": "1.0.0",
+  "description": "typescript surf api",
+  "main": "src/index.ts",
+  "repository": "git",
+  "author": "eduardosdl <edu.silva.e08@gmail.com>",
+  "license": "MIT"
+}
