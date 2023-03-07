@@ -1,4 +1,5 @@
 import { Document, Schema, model, models } from 'mongoose';
+import logger from '@src/logger';
 
 import AuthService from '@src/services/auth';
 
@@ -55,7 +56,7 @@ schema.pre<UserModel>('save', async function (): Promise<void> {
 
     this.password = hashedPassword;
   } catch (err) {
-    console.error(`Error hashing the password for the user ${this.name}`);
+    logger.error(`Error hashing the password for the user ${this.name}`);
   }
 });
 
