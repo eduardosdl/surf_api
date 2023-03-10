@@ -1,49 +1,78 @@
+import nock from 'nock';
+
+import { Beach, GeoPosition } from '@src/models/beach';
+import { User } from '@src/models/user';
+import AuthService from '@src/services/auth';
+
+import stormGlassWeather3HoursFixture from '@test/fixtures/stormglass_weather_3_hours.json';
+import apiForecastResponse1BeachFixture from '@test/fixtures/api_forecast_response_1_beach.json';
+
 describe('Beach forecast functional tests', () => {
+  const defaultUser = {
+    name: 'John Doe',
+    email: 'john@mail.com',
+    password: '1234',
+  };
+  let token: string;
+
+  beforeEach(async () => {
+    await User.deleteMany({});
+    await Beach.deleteMany({});
+
+    const user = await new User(defaultUser).save();
+    const defaultBeach = {
+      lat: -8.2601,
+      lng: -34.9451,
+      name: 'Paiva',
+      position: GeoPosition.E,
+      user: user.id,
+    };
+
+    await new Beach(defaultBeach).save();
+    token = AuthService.generateToken(user.toJSON());
+  });
+
   it('should return a forecast with just a few times', async () => {
-    const { body, status } = await global.testRequest.get('/forecast');
+    nock('https://api.stormglass.io:443', {
+      encodedQueryParams: true,
+      reqheaders: {
+        Authorization: (): boolean => true,
+      },
+    })
+      .defaultReplyHeaders({ 'acess-control-allow-origin': '*' })
+      .get('/v2/weather/point')
+      .query({
+        lat: '-8.2601',
+        lng: '-34.9451',
+        params: /(.*)/,
+        source: 'noaa',
+      })
+      .reply(200, stormGlassWeather3HoursFixture);
+
+    const { body, status } = await global.testRequest
+      .get('/forecast')
+      .set({ 'x-access-token': token });
 
     expect(status).toBe(200);
-    expect(body).toEqual([
-      {
-        time: '2023-02-12T00:00:00+00:00',
-        forecast: [
-          {
-            lat: -8.2601,
-            lng: -34.9451,
-            name: 'Paiva',
-            position: 'E',
-            rating: 1,
-            swellDirection: 45.54,
-            swellHeight: 0.37,
-            swellPeriod: 8.94,
-            time: '2023-02-12T00:00:00+00:00',
-            waveDirection: 151.94,
-            waveHeight: 1.16,
-            windDirection: 161.9,
-            windSpeed: 1.58,
-          },
-        ],
+    expect(body).toEqual(apiForecastResponse1BeachFixture);
+  });
+
+  it('should return 500 if something goes wrong during the processing', async () => {
+    nock('https://api.stormglass.io:443', {
+      encodedQueryParams: true,
+      reqheaders: {
+        Authorization: (): boolean => true,
       },
-      {
-        time: '2023-02-12T01:00:00+00:00',
-        forecast: [
-          {
-            lat: -8.2601,
-            lng: -34.9451,
-            name: 'Paiva',
-            position: 'E',
-            rating: 1,
-            swellDirection: 67.59,
-            swellHeight: 0.38,
-            swellPeriod: 9.77,
-            time: '2023-02-12T01:00:00+00:00',
-            waveDirection: 151.21,
-            waveHeight: 1.15,
-            windDirection: 163.25,
-            windSpeed: 1.61,
-          },
-        ],
-      },
-    ]);
+    })
+      .defaultReplyHeaders({ 'acess-control-allow-origin': '*' })
+      .get('/v2/weather/point')
+      .query({ lat: '-8.2601', lng: '-34.9451' })
+      .replyWithError('Something went wrong');
+
+    const { status } = await global.testRequest
+      .get('/forecast')
+      .set({ 'x-access-token': token });
+
+    expect(status).toBe(500);
   });
 });
