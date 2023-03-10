@@ -2,7 +2,7 @@ import { StormGlass } from '@src/clients/stormGlass';
 
 import stormGlassNormalizedResponseFixture from '@test/fixtures/stormGlass_normalized_response_3_hours.json';
 import { Forecast, ForecastProcessingInternalError } from '../forecast';
-import { BeachProps, BeachPosition } from '@src/models/beach';
+import { BeachProps, GeoPosition } from '@src/models/beach';
 
 jest.mock('@src/clients/stormGlass');
 
@@ -19,7 +19,7 @@ describe('Forecast service', () => {
         lat: -8.2601,
         lng: -34.9451,
         name: 'Paiva',
-        position: BeachPosition.E,
+        position: GeoPosition.E,
         user: 'fake-id',
       },
     ];
@@ -105,7 +105,7 @@ describe('Forecast service', () => {
         lat: -8.2601,
         lng: -34.9451,
         name: 'Paiva',
-        position: BeachPosition.E,
+        position: GeoPosition.E,
         user: 'fake-id',
       },
     ];
